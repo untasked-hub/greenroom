@@ -1,0 +1,14 @@
+web:
+  dockerfile: Dockerfile
+  port: 8080
+  health: /up
+# Background processes run only after release_promote (not on the candidate).
+# Uncomment when the product needs a queue worker or scheduler:
+# processes:
+#   worker:
+#     command: "php artisan queue:work --tries=3 --max-time=3600"
+#   scheduler:
+#     command: "php artisan schedule:work"
+#     memory_mb: 256
+secrets:
+  - APP_KEY

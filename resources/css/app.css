@@ -1,0 +1,272 @@
+@import "tailwindcss";
+
+/*
+ * Greenroom editorial design system.
+ *
+ * Light editorial Warm Paper (#FAF8F2) for Home, Registration, Chat,
+ * Recordings, Replay, and Schedule & Emails; Charcoal (#202423) for the
+ * Presenter Studio; Deep Emerald (#006849), Pistachio (#C9F284),
+ * Soft Lilac (#DCD3F7), and Signal Red (#C43D3D) for brand & status accents.
+ */
+@theme {
+  --color-paper: #FAF8F2;
+  --color-paper-card: #FFFFFF;
+  --color-paper-soft: #F2EFE6;
+  --color-paper-border: #E5E0D5;
+
+  --color-charcoal: #202423;
+  --color-charcoal-soft: #2A2F2D;
+  --color-charcoal-muted: #5C6260;
+
+  --color-emerald-brand: #006849;
+  --color-emerald-brand-hover: #00543B;
+  --color-pistachio: #C9F284;
+  --color-pistachio-soft: #E5F8C2;
+  --color-lilac: #DCD3F7;
+  --color-lilac-soft: #EFEBFB;
+  --color-signal-red: #C43D3D;
+  --color-signal-red-hover: #A93232;
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: #FAF8F2;
+    color: #202423;
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: #C9F284;
+    color: #202423;
+  }
+
+  :focus-visible {
+    outline: 2px solid #006849;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Light editorial page frame */
+  .gr-page {
+    min-height: 100vh;
+    background-color: #FAF8F2;
+    color: #202423;
+  }
+
+  /* Dark Presenter Studio frame */
+  .gr-page-studio {
+    min-height: 100vh;
+    background-color: #202423;
+    color: #FAF8F2;
+  }
+
+  .gr-topbar {
+    border-bottom: 1px solid #E5E0D5;
+    background-color: #FAF8F2;
+  }
+
+  .gr-shell {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  .gr-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #006849;
+  }
+
+  .gr-title {
+    font-size: clamp(1.5rem, 1.2rem + 1.1vw, 2.15rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: #202423;
+    line-height: 1.12;
+  }
+
+  .gr-card {
+    border-radius: 1.125rem;
+    border: 1px solid #E5E0D5;
+    background-color: #FFFFFF;
+    box-shadow: 0 2px 10px -4px rgba(32, 36, 35, 0.06);
+  }
+
+  .gr-card-soft {
+    border-radius: 0.875rem;
+    border: 1px solid #E5E0D5;
+    background-color: #F6F3EB;
+  }
+
+  .gr-studio-card {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: #2A2F2D;
+    color: #FAF8F2;
+  }
+
+  .gr-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #202423;
+  }
+
+  .gr-muted {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #5C6260;
+  }
+
+  .gr-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border-radius: 0.65rem;
+    border: 1px solid #D8D2C5;
+    background-color: #FFFFFF;
+    padding: 0.5rem 0.95rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #202423;
+    transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+    cursor: pointer;
+  }
+
+  .gr-btn:hover {
+    background-color: #F2EFE6;
+    border-color: #C4BDB0;
+  }
+
+  .gr-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .gr-btn-primary {
+    border: 1px solid #006849;
+    background-color: #006849;
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+
+  .gr-btn-primary:hover {
+    background-color: #00543B;
+    border-color: #00543B;
+  }
+
+  .gr-btn-pistachio {
+    border: 1px solid #B5DF6C;
+    background-color: #C9F284;
+    color: #202423;
+    font-weight: 700;
+  }
+
+  .gr-btn-pistachio:hover {
+    background-color: #BCE972;
+  }
+
+  .gr-btn-danger {
+    border: 1px solid #C43D3D;
+    background-color: #C43D3D;
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+
+  .gr-btn-danger:hover {
+    background-color: #A93232;
+  }
+
+  .gr-input {
+    width: 100%;
+    border-radius: 0.6rem;
+    border: 1px solid #D8D2C5;
+    background-color: #FFFFFF;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.875rem;
+    color: #202423;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+  }
+
+  .gr-input::placeholder {
+    color: #8C918E;
+  }
+
+  .gr-input:focus {
+    outline: none;
+    border-color: #006849;
+    box-shadow: 0 0 0 3px rgba(0, 104, 73, 0.14);
+  }
+
+  .gr-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 650;
+    color: #202423;
+  }
+
+  .gr-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    background-color: #C9F284;
+    padding: 0.18rem 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #006849;
+  }
+
+  .gr-badge-lilac {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    background-color: #DCD3F7;
+    padding: 0.18rem 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #202423;
+  }
+
+  .gr-badge-red {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    background-color: #FDECEC;
+    border: 1px solid #F5C2C2;
+    padding: 0.18rem 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #C43D3D;
+  }
+
+  .gr-badge-warn {
+    background-color: #FEF3C7;
+    color: #92400E;
+  }
+
+  .gr-divider {
+    height: 1px;
+    background-color: #E5E0D5;
+  }
+}

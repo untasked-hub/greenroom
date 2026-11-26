@@ -1,0 +1,52 @@
+# PHP runs in the container. Do not add a local postgres service when app_create reserved hosted Postgres.
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: ${APP_KEY:-}
+      APP_URL: http://127.0.0.1:8080
+      DB_CONNECTION: pgsql
+      DATABASE_URL: ${DATABASE_URL:-}
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:-}
+      UNTASKED_STORAGE_URL: ${UNTASKED_STORAGE_URL:-}
+      UNTASKED_STORAGE_TOKEN: ${UNTASKED_STORAGE_TOKEN:-}
+      UNTASKED_UPLOADS_URL: ${UNTASKED_UPLOADS_URL:-}
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+    volumes:
+      - composer-cache:/tmp/composer
+      - npm-cache:/tmp/npm
+  # Optional preview worker. Production uses untasked.yaml processes after promote.
+  worker:
+    build: .
+    profiles: ["worker"]
+    command: ["php", "artisan", "queue:work", "--tries=3", "--max-time=3600"]
+    environment:
+      APP_ENV: local
+      APP_KEY: ${APP_KEY:-}
+      APP_URL: http://127.0.0.1:8080
+      DB_CONNECTION: pgsql
+      DATABASE_URL: ${DATABASE_URL:-}
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:-}
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+  # One-shot suite for `docker compose run --rm test`. Not started by app_up (--wait).
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    environment:
+      APP_ENV: testing
+      APP_KEY: base64:dW50YXNrZWQtcGhwdW5pdC10ZXN0LWtleS14eHh4eHg=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+volumes:
+  composer-cache:
+  npm-cache:

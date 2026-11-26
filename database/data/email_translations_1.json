@@ -1,0 +1,132 @@
+{
+    "es": {
+        "attendee_followup": {
+            "body": "<p>Hola {{name}},</p><p>¡Gracias por asistir en directo a <strong>{{webinar_title}}</strong>!</p><p>Puedes volver a ver la grabación cuando quieras:</p><p><a href=\"{{replay_url}}\">Ver la grabación</a></p><p>Hasta pronto,<br/>El equipo de {{app_name}}</p>",
+            "subject": "Gracias por asistir a {{webinar_title}}"
+        },
+        "replay_followup": {
+            "subject": "Tu grabación está lista: {{webinar_title}}",
+            "body": "<p>Hola {{name}},</p><p>La grabación de <strong>{{webinar_title}}</strong> ya está lista.</p><p><a href=\"{{replay_url}}\">Ver la grabación</a></p><p>Que la disfrutes,<br/>El equipo de {{app_name}}</p>"
+        },
+        "live_reminder": {
+            "subject": "Comienza en 10 minutos: {{webinar_title}}",
+            "body": "<p>Hola {{name}},</p><p><strong>{{webinar_title}}</strong> comienza en 10 minutos ({{scheduled_at}}).</p><p><a href=\"{{join_url}}\">Unirse a la sala en directo</a></p><p>Te esperamos,<br/>El equipo de {{app_name}}</p>"
+        },
+        "replay_confirmation": {
+            "body": "<p>Hola {{name}},</p><p>Gracias por solicitar la grabación de <strong>{{webinar_title}}</strong>.</p><p>Puedes acceder al vídeo aquí:</p><p><a href=\"{{replay_url}}\">Abrir la grabación</a></p><p>Un saludo,<br/>El equipo de {{app_name}}</p>",
+            "subject": "Acceso a la grabación: {{webinar_title}}"
+        },
+        "registration_confirmation": {
+            "subject": "Inscripción confirmada: {{webinar_title}}",
+            "body": "<p>Hola {{name}},</p><p>Tu plaza para <strong>{{webinar_title}}</strong> está confirmada.</p><p><strong>Cuándo:</strong> {{scheduled_at}}</p><p><a href=\"{{join_url}}\">Unirse al seminario en directo</a></p><p>Nos vemos pronto,<br/>El equipo de {{app_name}}</p>"
+        },
+        "non_attendee_followup": {
+            "body": "<p>Hola {{name}},</p><p>Te echamos de menos en <strong>{{webinar_title}}</strong>.</p><p>La grabación completa ya está disponible para verla cuando quieras:</p><p><a href=\"{{replay_url}}\">Ver la grabación</a></p><p>Un saludo,<br/>El equipo de {{app_name}}</p>",
+            "subject": "¿No pudiste asistir? Grabación de {{webinar_title}}"
+        }
+    },
+    "fr": {
+        "live_reminder": {
+            "body": "<p>Bonjour {{name}},</p><p><strong>{{webinar_title}}</strong> commence dans 10 minutes ({{scheduled_at}}).</p><p><a href=\"{{join_url}}\">Rejoindre le direct maintenant</a></p><p>À tout de suite,<br/>L'équipe {{app_name}}</p>",
+            "subject": "Début dans 10 minutes : {{webinar_title}}"
+        },
+        "replay_confirmation": {
+            "body": "<p>Bonjour {{name}},</p><p>Merci pour votre demande de replay pour <strong>{{webinar_title}}</strong>.</p><p>Accédez à la vidéo enregistrée ici :</p><p><a href=\"{{replay_url}}\">Ouvrir le replay</a></p><p>Bien à vous,<br/>L'équipe {{app_name}}</p>",
+            "subject": "Accès au replay : {{webinar_title}}"
+        },
+        "attendee_followup": {
+            "body": "<p>Bonjour {{name}},</p><p>Merci d'avoir participé en direct à <strong>{{webinar_title}}</strong> !</p><p>Vous pouvez revoir l'enregistrement complet à tout moment :</p><p><a href=\"{{replay_url}}\">Regarder le replay</a></p><p>À bientôt,<br/>L'équipe {{app_name}}</p>",
+            "subject": "Merci d'avoir assisté à {{webinar_title}}"
+        },
+        "non_attendee_followup": {
+            "subject": "Vous avez manqué le direct ? Replay de {{webinar_title}}",
+            "body": "<p>Bonjour {{name}},</p><p>Vous nous avez manqué lors de <strong>{{webinar_title}}</strong>.</p><p>Bonne nouvelle : le replay complet est disponible dès maintenant :</p><p><a href=\"{{replay_url}}\">Regarder le replay</a></p><p>Bien à vous,<br/>L'équipe {{app_name}}</p>"
+        },
+        "registration_confirmation": {
+            "subject": "Inscription confirmée : {{webinar_title}}",
+            "body": "<p>Bonjour {{name}},</p><p>Votre inscription à <strong>{{webinar_title}}</strong> est confirmée.</p><p><strong>Quand :</strong> {{scheduled_at}}</p><p><a href=\"{{join_url}}\">Rejoindre le webinaire en direct</a></p><p>À très vite,<br/>L'équipe {{app_name}}</p>"
+        },
+        "replay_followup": {
+            "body": "<p>Bonjour {{name}},</p><p>L'enregistrement de <strong>{{webinar_title}}</strong> est maintenant prêt.</p><p><a href=\"{{replay_url}}\">Regarder le replay</a></p><p>Bon visionnage,<br/>L'équipe {{app_name}}</p>",
+            "subject": "Votre replay est prêt : {{webinar_title}}"
+        }
+    },
+    "de": {
+        "replay_followup": {
+            "subject": "Ihre Aufzeichnung ist bereit: {{webinar_title}}",
+            "body": "<p>Hallo {{name}},</p><p>die Aufzeichnung von <strong>{{webinar_title}}</strong> ist jetzt bereit.</p><p><a href=\"{{replay_url}}\">Aufzeichnung ansehen</a></p><p>Viel Spaß beim Anschauen,<br/>Das {{app_name}}-Team</p>"
+        },
+        "live_reminder": {
+            "body": "<p>Hallo {{name}},</p><p><strong>{{webinar_title}}</strong> startet in 10 Minuten ({{scheduled_at}}).</p><p><a href=\"{{join_url}}\">Jetzt live teilnehmen</a></p><p>Bis gleich,<br/>Das {{app_name}}-Team</p>",
+            "subject": "Startet in 10 Minuten: {{webinar_title}}"
+        },
+        "non_attendee_followup": {
+            "subject": "Live verpasst? Aufzeichnung für {{webinar_title}}",
+            "body": "<p>Hallo {{name}},</p><p>schade, dass Sie bei <strong>{{webinar_title}}</strong> nicht live dabei sein konnten.</p><p>Die vollständige Aufzeichnung steht für Sie bereit:</p><p><a href=\"{{replay_url}}\">Aufzeichnung ansehen</a></p><p>Viele Grüße,<br/>Das {{app_name}}-Team</p>"
+        },
+        "replay_confirmation": {
+            "subject": "Zugang zur Aufzeichnung: {{webinar_title}}",
+            "body": "<p>Hallo {{name}},</p><p>vielen Dank für Ihre Anmeldung zur Aufzeichnung von <strong>{{webinar_title}}</strong>.</p><p>Sie können das Video hier abrufen:</p><p><a href=\"{{replay_url}}\">Aufzeichnung öffnen</a></p><p>Viele Grüße,<br/>Das {{app_name}}-Team</p>"
+        },
+        "attendee_followup": {
+            "body": "<p>Hallo {{name}},</p><p>vielen Dank für Ihre Teilnahme an <strong>{{webinar_title}}</strong>!</p><p>Sie können die Aufzeichnung jederzeit erneut ansehen:</p><p><a href=\"{{replay_url}}\">Aufzeichnung ansehen</a></p><p>Bis zum nächsten Mal,<br/>Das {{app_name}}-Team</p>",
+            "subject": "Danke für Ihre Teilnahme an {{webinar_title}}"
+        },
+        "registration_confirmation": {
+            "body": "<p>Hallo {{name}},</p><p>Ihr Platz für <strong>{{webinar_title}}</strong> ist reserviert.</p><p><strong>Termin:</strong> {{scheduled_at}}</p><p><a href=\"{{join_url}}\">Am Live-Webinar teilnehmen</a></p><p>Bis bald,<br/>Das {{app_name}}-Team</p>",
+            "subject": "Ihr Platz ist reserviert: {{webinar_title}}"
+        }
+    },
+    "en": {
+        "non_attendee_followup": {
+            "subject": "Missed us live? Replay for {{webinar_title}}",
+            "body": "<p>Hi {{name}},</p><p>We missed you at <strong>{{webinar_title}}</strong>.</p><p>Good news — the full recording is ready for you to watch on demand:</p><p><a href=\"{{replay_url}}\">Watch the replay</a></p><p>Best,<br/>The {{app_name}} team</p>"
+        },
+        "replay_confirmation": {
+            "subject": "Replay access: {{webinar_title}}",
+            "body": "<p>Hi {{name}},</p><p>Thanks for requesting the replay of <strong>{{webinar_title}}</strong>.</p><p>Watch the session recording here:</p><p><a href=\"{{replay_url}}\">Open the replay</a></p><p>Best,<br/>The {{app_name}} team</p>"
+        },
+        "replay_followup": {
+            "body": "<p>Hi {{name}},</p><p>The recording of <strong>{{webinar_title}}</strong> is now ready to watch.</p><p><a href=\"{{replay_url}}\">Watch the replay</a></p><p>Enjoy,<br/>The {{app_name}} team</p>",
+            "subject": "Your replay is ready: {{webinar_title}}"
+        },
+        "registration_confirmation": {
+            "body": "<p>Hi {{name}},</p><p>You're registered for <strong>{{webinar_title}}</strong>.</p><p><strong>When:</strong> {{scheduled_at}}</p><p><a href=\"{{join_url}}\">Join the live webinar</a></p><p>See you there,<br/>The {{app_name}} team</p>",
+            "subject": "You're registered: {{webinar_title}}"
+        },
+        "live_reminder": {
+            "body": "<p>Hi {{name}},</p><p><strong>{{webinar_title}}</strong> starts in 10 minutes ({{scheduled_at}}).</p><p><a href=\"{{join_url}}\">Join the live room now</a></p><p>See you inside,<br/>The {{app_name}} team</p>",
+            "subject": "Starting in 10 minutes: {{webinar_title}}"
+        },
+        "attendee_followup": {
+            "subject": "Thanks for attending {{webinar_title}}",
+            "body": "<p>Hi {{name}},</p><p>Thank you for joining <strong>{{webinar_title}}</strong> live!</p><p>You can rewatch the full recording anytime:</p><p><a href=\"{{replay_url}}\">Watch the replay</a></p><p>See you next time,<br/>The {{app_name}} team</p>"
+        }
+    },
+    "pt": {
+        "non_attendee_followup": {
+            "subject": "Perdeu ao vivo? Gravação de {{webinar_title}}",
+            "body": "<p>Olá {{name}},</p><p>Sentimos sua falta em <strong>{{webinar_title}}</strong>.</p><p>A gravação completa já está disponível sob demanda:</p><p><a href=\"{{replay_url}}\">Assistir à gravação</a></p><p>Um abraço,<br/>Equipe {{app_name}}</p>"
+        },
+        "replay_confirmation": {
+            "body": "<p>Olá {{name}},</p><p>Obrigado por solicitar a gravação de <strong>{{webinar_title}}</strong>.</p><p>Assista ao vídeo gravado aqui:</p><p><a href=\"{{replay_url}}\">Abrir gravação</a></p><p>Um abraço,<br/>Equipe {{app_name}}</p>",
+            "subject": "Acesso à gravação: {{webinar_title}}"
+        },
+        "registration_confirmation": {
+            "body": "<p>Olá {{name}},</p><p>Sua inscrição em <strong>{{webinar_title}}</strong> está confirmada.</p><p><strong>Quando:</strong> {{scheduled_at}}</p><p><a href=\"{{join_url}}\">Entrar no webinar ao vivo</a></p><p>Nos vemos lá,<br/>Equipe {{app_name}}</p>",
+            "subject": "Inscrição confirmada: {{webinar_title}}"
+        },
+        "live_reminder": {
+            "subject": "Começa em 10 minutos: {{webinar_title}}",
+            "body": "<p>Olá {{name}},</p><p><strong>{{webinar_title}}</strong> começa em 10 minutos ({{scheduled_at}}).</p><p><a href=\"{{join_url}}\">Entrar na sala ao vivo</a></p><p>Até já,<br/>Equipe {{app_name}}</p>"
+        },
+        "replay_followup": {
+            "subject": "Sua gravação está pronta: {{webinar_title}}",
+            "body": "<p>Olá {{name}},</p><p>A gravação de <strong>{{webinar_title}}</strong> já está pronta para assistir.</p><p><a href=\"{{replay_url}}\">Assistir à gravação</a></p><p>Bom proveito,<br/>Equipe {{app_name}}</p>"
+        },
+        "attendee_followup": {
+            "subject": "Obrigado por participar de {{webinar_title}}",
+            "body": "<p>Olá {{name}},</p><p>Obrigado por participar ao vivo em <strong>{{webinar_title}}</strong>!</p><p>Você pode assistir novamente à gravação quando quiser:</p><p><a href=\"{{replay_url}}\">Assistir à gravação</a></p><p>Até a próxima,<br/>Equipe {{app_name}}</p>"
+        }
+    }
+}
