@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Head, Link, usePage } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import { StudioSession, StudioSlide } from '../lib/studioSession'
 import { SpeakerLayout, StageSource } from '../lib/stageCompositor'
 import StudioSlidesPanel from '../Components/StudioSlidesPanel.vue'
@@ -42,6 +42,7 @@ const presenterName = ref(authUser.value?.name || 'Presenter')
 const backstageMessages = ref<ChatMessage[]>([])
 const guestMessages = ref<ChatMessage[]>([])
 const copied = ref('')
+const resettingStudioLink = ref(false)
 
 const isLive = ref(props.room.is_live)
 const liveStatus = ref(props.room.is_live ? 'Live' : 'Off air')
@@ -106,6 +107,17 @@ async function copyLink(kind: 'guest' | 'studio' | 'register'): Promise<void> {
   window.setTimeout(() => { if (copied.value === kind) copied.value = '' }, 1800)
 }
 
+function resetStudioLink(): void {
+  if (!window.confirm('Reset the studio link? The current studio link will stop working and anyone holding it will lose presenter access. A new link will be created.')) return
+
+  resettingStudioLink.value = true
+  router.post(`/studio/${props.room.slug}/${props.presenterKey}/rotate`, {}, {
+    preserveState: false,
+    replace: true,
+    onFinish: () => { resettingStudioLink.value = false },
+  })
+}
+
 function setSource(src: StageSource): void {
   stageSource.value = src
   void session.setLayout(src, speakerLayout.value)
@@ -165,6 +177,9 @@ onBeforeUnmount(() => {
         </button>
         <button type="button" @click="copyLink('studio')" class="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[#FAF8F2]/90 hover:bg-white/10 transition">
           {{ copied === 'studio' ? 'Copied studio' : 'Studio link' }}
+        </button>
+        <button type="button" :disabled="resettingStudioLink" @click="resetStudioLink" class="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[#FAF8F2]/90 hover:bg-white/10 disabled:opacity-50 transition">
+          Reset studio link
         </button>
         <Link v-if="authUser" href="/events" class="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[#FAF8F2]/90 hover:bg-white/10 transition">
           My events

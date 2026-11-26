@@ -40,6 +40,36 @@ test('the studio renders for the right presenter key', function () {
         ->assertInertia(fn ($page) => $page->component('Studio')->where('room.slug', 'abc12345'));
 });
 
+test('resetting the studio link replaces the presenter key', function () {
+    $room = makeRoom();
+    $oldKey = 'presenter-key-123';
+
+    $response = $this->post("/studio/{$room->slug}/{$oldKey}/rotate")->assertRedirect();
+
+    $newKey = $room->refresh()->getPresenterKey();
+    expect($newKey)->not->toBeNull()->not->toBe($oldKey);
+    $response->assertRedirect(route('studio', [$room->slug, $newKey]));
+
+    $this->get(route('studio', [$room->slug, $oldKey]))->assertNotFound();
+    $this->post("/studio/{$room->slug}/{$oldKey}/rotate")->assertNotFound();
+    $this->get($response->headers->get('Location'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Studio')->where('presenterKey', $newKey));
+});
+
+test('a wrong presenter key cannot reset the studio link', function () {
+    $room = makeRoom();
+    $room->ensurePresenterKey();
+    $hash = $room->presenter_key_hash;
+    $encrypted = $room->presenter_key_encrypted;
+
+    $this->get("/studio/{$room->slug}/wrong-key")->assertNotFound();
+    $this->post("/studio/{$room->slug}/wrong-key/rotate")->assertNotFound();
+
+    expect($room->refresh()->presenter_key_hash)->toBe($hash)
+        ->and($room->presenter_key_encrypted)->toBe($encrypted);
+});
+
 test('unknown rooms return 404', function () {
     $this->get('/r/missing')->assertNotFound();
     $this->getJson('/r/missing/chat/room')->assertNotFound();

@@ -126,6 +126,11 @@ class Room extends Model
             return $existing;
         }
 
+        return $this->rotatePresenterKey();
+    }
+
+    public function rotatePresenterKey(): string
+    {
         $key = \Illuminate\Support\Str::random(40);
         $this->forceFill([
             'presenter_key_hash' => hash('sha256', $key),

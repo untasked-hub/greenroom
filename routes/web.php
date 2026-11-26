@@ -49,6 +49,7 @@ Route::post('/r/{slug}/signals', [SignalController::class, 'store'])->name('room
 
 // Presenter studio: keyed URL, backstage chat, slide deck upload, live slide + broadcast controls.
 Route::get('/studio/{slug}/{key}', [RoomController::class, 'studio'])->name('studio');
+Route::post('/studio/{slug}/{key}/rotate', [RoomController::class, 'rotatePresenterKey'])->name('studio.rotate');
 Route::post('/studio/{slug}/{key}/slides', [SlideController::class, 'store'])->name('studio.slides');
 Route::post('/studio/{slug}/{key}/live', [RoomController::class, 'setCurrentSlide'])->name('studio.live');
 Route::post('/studio/{slug}/{key}/go-live', [LiveController::class, 'goLive'])->name('studio.go-live');

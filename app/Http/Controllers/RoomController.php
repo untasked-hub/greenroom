@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Room;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -103,9 +104,12 @@ class RoomController extends Controller
         $room = $this->findRoom($slug, $key);
 
         if ($room->presenter_key_encrypted === null) {
-            $room->forceFill([
-                'presenter_key_encrypted' => \Illuminate\Support\Facades\Crypt::encryptString($key),
-            ])->save();
+            Room::whereKey($room->id)
+                ->where('presenter_key_hash', $room->presenter_key_hash)
+                ->whereNull('presenter_key_encrypted')
+                ->update([
+                    'presenter_key_encrypted' => \Illuminate\Support\Facades\Crypt::encryptString($key),
+                ]);
         }
 
         return Inertia::render('Studio', [
@@ -137,6 +141,15 @@ class RoomController extends Controller
         ]);
     }
 
+    public function rotatePresenterKey(string $slug, string $key): RedirectResponse
+    {
+        $newKey = DB::transaction(function () use ($slug, $key) {
+            return $this->findRoom($slug, $key, lockForUpdate: true)->rotatePresenterKey();
+        });
+
+        return redirect()->route('studio', [$slug, $newKey], 303);
+    }
+
     public function setCurrentSlide(string $slug, string $key, Request $request): RedirectResponse
     {
         $room = $this->findRoom($slug, $key);
@@ -158,9 +171,13 @@ class RoomController extends Controller
         return back();
     }
 
-    private function findRoom(string $slug, ?string $presenterKey = null): Room
+    private function findRoom(string $slug, ?string $presenterKey = null, bool $lockForUpdate = false): Room
     {
-        $room = Room::where('slug', $slug)->first();
+        $query = Room::where('slug', $slug);
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+        $room = $query->first();
         abort_if($room === null, 404);
 
         if ($presenterKey !== null) {
