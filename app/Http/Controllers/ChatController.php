@@ -24,7 +24,7 @@ class ChatController extends Controller
 
         $currentSlide = $room->currentSlide();
 
-        return response()->json([
+        $response = response()->json([
             'messages' => $messages,
             'live' => [
                 'is_live' => $room->isLive(),
@@ -40,7 +40,11 @@ class ChatController extends Controller
                     'url' => route('room.slide', [$room->slug, $currentSlide->id]),
                 ] : null,
             ],
-        ]);
+        ], 200, ['Cache-Control' => 'private, no-store']);
+        $response->setEtag(hash('sha256', $response->getContent()), weak: true);
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     public function store(string $slug, string $channel, Request $request): JsonResponse

@@ -1,5 +1,6 @@
 import { csrfToken, PresenterBroadcaster } from './webrtcSignaling'
 import { drawStageFrame, SpeakerLayout, StageSource } from './stageCompositor'
+import { VirtualBackground, type BackgroundMode } from './virtualBackground'
 import { loadPdfDeck, loadPptxDeck, RenderedDeck } from './slideRenderer'
 
 export interface StudioSlide {
@@ -9,7 +10,56 @@ export interface StudioSlide {
   size: number
 }
 
+export interface BackgroundState {
+  mode: BackgroundMode
+  imageId: string | null
+  available: boolean
+}
+
+const backgroundModeKey = 'greenroom.vb.mode'
+const backgroundImageKey = 'greenroom.vb.image'
+const backgroundUploadKey = 'greenroom.vb.upload'
+
+function backgroundPreference(key: string): string | null {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function saveBackgroundPreference(key: string, value: string | null): void {
+  try {
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
+  } catch {
+    // Effects still work for the current session if browser storage is blocked or full.
+  }
+}
+
+async function decodeBackground(url: string): Promise<HTMLImageElement> {
+  const image = new Image()
+  image.crossOrigin = 'anonymous'
+  image.src = url
+  await image.decode()
+  return image
+}
+
+async function downscaleBackground(image: HTMLImageElement): Promise<HTMLImageElement> {
+  const canvas = document.createElement('canvas')
+  const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight))
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Image canvas is unavailable.')
+  ctx.fillStyle = '#090d16'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+  return decodeBackground(canvas.toDataURL('image/jpeg', 0.85))
+}
+
 export interface StudioSessionCallbacks {
+  onBackgroundState?: (state: BackgroundState) => void
   onViewerCount: (n: number) => void
   onSlideMeta: (page: number, total: number, error: string) => void
   onMediaState: (camOn: boolean, screenOn: boolean, micOn: boolean, error: string) => void
@@ -21,6 +71,13 @@ export class StudioSession {
   private ctx: CanvasRenderingContext2D | null = null
   private cameraVideo: HTMLVideoElement | null = null
   private screenVideo: HTMLVideoElement | null = null
+  private virtualBackground: VirtualBackground
+  private backgroundState: BackgroundState = { mode: 'none', imageId: null, available: true }
+  private backgroundImageRequest = 0
+  private backgroundRestored = false
+  private backgroundImageRestoring = false
+  private destroyed = false
+  private cameraStarting = false
   private cameraStream: MediaStream | null = null
   private screenStream: MediaStream | null = null
   private broadcaster: PresenterBroadcaster
@@ -49,6 +106,11 @@ export class StudioSession {
     private presenterKey: string,
     private cb: StudioSessionCallbacks,
   ) {
+    this.virtualBackground = new VirtualBackground(() => {
+      this.backgroundState.mode = 'none'
+      this.backgroundState.available = false
+      this.emitBackgroundState()
+    })
     this.broadcaster = new PresenterBroadcaster(slug, presenterKey, (n) => cb.onViewerCount(n))
   }
 
@@ -61,6 +123,7 @@ export class StudioSession {
     this.ctx = canvas.getContext('2d')
     this.cameraVideo = cameraVideo
     this.screenVideo = screenVideo
+    this.restoreBackground()
     this.startLoop()
   }
 
@@ -71,12 +134,14 @@ export class StudioSession {
     // Web Worker keep firing in background tabs, so the stage keeps producing frames.
     const tick = () => {
       if (this.ctx && this.canvas) {
+        this.virtualBackground.processFrame()
         drawStageFrame(this.ctx, this.canvas.width, this.canvas.height, {
           stageSource: this.stageSource,
           speakerLayout: this.speakerLayout,
           slideCanvas: this.slideCanvas,
           screenVideo: this.screenVideo,
           cameraVideo: this.cameraVideo,
+          processedCamera: this.virtualBackground.getProcessedCanvas(),
           roomTitle: this.roomTitle,
           isLive: this.isLive,
           speakerName: this.speakerName,
@@ -162,10 +227,86 @@ export class StudioSession {
     await this.persistLayout()
   }
 
+  getBackgroundState(): BackgroundState {
+    return { ...this.backgroundState }
+  }
+
+  setBackgroundMode(mode: BackgroundMode): void {
+    this.backgroundImageRequest++
+    this.applyBackgroundMode(mode)
+  }
+
+  private applyBackgroundMode(mode: BackgroundMode): void {
+    if (this.destroyed || (!this.backgroundState.available && mode !== 'none')) return
+    this.backgroundState.mode = mode
+    this.virtualBackground.setMode(mode)
+    saveBackgroundPreference(backgroundModeKey, mode)
+    this.emitBackgroundState()
+  }
+
+  async setBackgroundImage(url: string | null): Promise<void> {
+    if (this.destroyed || !this.backgroundState.available) return
+    const request = ++this.backgroundImageRequest
+    if (url === null) {
+      this.backgroundImageRestoring = false
+      this.virtualBackground.setImage(null)
+      this.backgroundState.imageId = null
+      saveBackgroundPreference(backgroundImageKey, null)
+      saveBackgroundPreference(backgroundUploadKey, null)
+      if (this.backgroundState.mode === 'image') this.applyBackgroundMode('none')
+      else this.emitBackgroundState()
+      return
+    }
+
+    const uploaded = url.startsWith('data:') || url.startsWith('blob:')
+    let image = await decodeBackground(url)
+    if (uploaded) image = await downscaleBackground(image)
+    if (request !== this.backgroundImageRequest || !this.backgroundState.available) return
+    const imageId = uploaded ? 'upload' : url
+    this.backgroundImageRestoring = false
+    this.virtualBackground.setImage(image)
+    this.backgroundState.imageId = imageId
+    if (uploaded) saveBackgroundPreference(backgroundUploadKey, image.src)
+    saveBackgroundPreference(backgroundImageKey, imageId)
+    this.applyBackgroundMode('image')
+  }
+
+  private restoreBackground(): void {
+    if (this.backgroundRestored) return
+    this.backgroundRestored = true
+    const mode = backgroundPreference(backgroundModeKey)
+    const imageId = backgroundPreference(backgroundImageKey)
+    const url = imageId === 'upload' ? backgroundPreference(backgroundUploadKey) : imageId
+    this.backgroundState.imageId = url ? imageId : null
+    if (url) {
+      this.backgroundImageRestoring = true
+      void decodeBackground(url).then((image) => {
+        if (!this.backgroundImageRestoring) return
+        this.backgroundImageRestoring = false
+        this.virtualBackground.setImage(image)
+      }, () => {
+        if (!this.backgroundImageRestoring) return
+        this.backgroundImageRestoring = false
+        this.backgroundState.imageId = null
+        if (this.backgroundState.mode === 'image') this.applyBackgroundMode('none')
+        else this.emitBackgroundState()
+      })
+    }
+    this.backgroundState.mode = mode === 'blur' || (mode === 'image' && url) ? mode : 'none'
+    this.virtualBackground.setMode(this.backgroundState.mode)
+    this.emitBackgroundState()
+  }
+
+  private emitBackgroundState(): void {
+    this.cb.onBackgroundState?.(this.getBackgroundState())
+  }
+
   async toggleCamera(): Promise<void> {
+    if (this.destroyed || this.cameraStarting) return
     if (this.cameraStream) {
       this.cameraStream.getTracks().forEach((t) => t.stop())
       this.cameraStream = null
+      this.virtualBackground.setCamera(null)
       if (this.cameraVideo) this.cameraVideo.srcObject = null
       this.emitMediaState('')
       this.syncBroadcastStream()
@@ -175,18 +316,28 @@ export class StudioSession {
       this.emitMediaState('Camera capture is not supported in this browser.')
       return
     }
+    this.cameraStarting = true
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      if (this.destroyed) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
       this.cameraStream = stream
+      this.restoreBackground()
       if (this.cameraVideo) {
         this.cameraVideo.srcObject = stream
         this.cameraVideo.muted = true
         await this.cameraVideo.play().catch(() => {})
       }
+      if (this.destroyed) return
+      this.virtualBackground.setCamera(this.cameraVideo)
       this.emitMediaState('')
       this.syncBroadcastStream()
     } catch {
-      this.emitMediaState('Camera permission was denied or no camera was found.')
+      if (!this.destroyed) this.emitMediaState('Camera permission was denied or no camera was found.')
+    } finally {
+      this.cameraStarting = false
     }
   }
 
@@ -356,6 +507,10 @@ export class StudioSession {
   }
 
   destroy(): void {
+    this.destroyed = true
+    this.backgroundImageRestoring = false
+    this.backgroundImageRequest++
+    this.virtualBackground.dispose()
     this.tickWorker?.terminate()
     this.tickWorker = null
     if (this.tickTimer !== null) window.clearInterval(this.tickTimer)

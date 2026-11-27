@@ -7,6 +7,7 @@ export interface CompositorSources {
   slideCanvas: HTMLCanvasElement | null
   screenVideo: HTMLVideoElement | null
   cameraVideo: HTMLVideoElement | null
+  processedCamera?: HTMLCanvasElement | null
   roomTitle: string
   isLive: boolean
   speakerName: string
@@ -26,7 +27,12 @@ export function drawStageFrame(
   ctx.fillStyle = '#090d16'
   ctx.fillRect(0, 0, width, height)
 
-  const hasCamera = !!(s.cameraVideo && s.cameraVideo.readyState >= 2 && s.cameraVideo.videoWidth > 0)
+  const video = s.cameraVideo
+  const hasCamera = !!(video && video.readyState >= 2 && video.videoWidth > 0)
+  const processed = s.processedCamera
+  const camera = processed && processed.width > 0 && processed.height > 0 ? processed : video
+  const cameraWidth = camera === video ? video?.videoWidth ?? 0 : processed?.width ?? 0
+  const cameraHeight = camera === video ? video?.videoHeight ?? 0 : processed?.height ?? 0
   const hasScreen = !!(s.screenVideo && s.screenVideo.readyState >= 2 && s.screenVideo.videoWidth > 0)
   const sidebarActive = s.speakerLayout === 'sidebar' && hasCamera
 
@@ -41,15 +47,15 @@ export function drawStageFrame(
     drawContained(ctx, s.slideCanvas, s.slideCanvas.width, s.slideCanvas.height, 0, 0, stageW, stageH)
   } else if (hasScreen && s.screenVideo) {
     drawContained(ctx, s.screenVideo, s.screenVideo.videoWidth, s.screenVideo.videoHeight, 0, 0, stageW, stageH)
-  } else if (hasCamera && s.cameraVideo && s.speakerLayout !== 'hidden') {
+  } else if (hasCamera && camera && s.speakerLayout !== 'hidden') {
     // Fallback: if neither slide nor screen is active, show speaker camera full-bleed
-    drawCovered(ctx, s.cameraVideo, s.cameraVideo.videoWidth, s.cameraVideo.videoHeight, 0, 0, stageW, stageH)
+    drawCovered(ctx, camera, cameraWidth, cameraHeight, 0, 0, stageW, stageH)
   } else {
     drawEmptyStage(ctx, stageW, stageH, s.roomTitle, s.stageSource)
   }
 
   // 2. Speaker camera sidebar or stacked overlay
-  if (hasCamera && s.cameraVideo && s.speakerLayout === 'sidebar') {
+  if (hasCamera && camera && s.speakerLayout === 'sidebar') {
     const pad = 16
     const panelX = stageW
     ctx.fillStyle = '#0f172a'
@@ -65,14 +71,14 @@ export function drawStageFrame(
     const camH = Math.round(camW * 0.75)
     const camX = panelX + pad
     const camY = 44
-    drawRoundedVideo(ctx, s.cameraVideo, camX, camY, camW, camH, 12, s.speakerName || 'Presenter')
-  } else if (hasCamera && s.cameraVideo && s.speakerLayout === 'overlay') {
+    drawRoundedVideo(ctx, camera, cameraWidth, cameraHeight, camX, camY, camW, camH, 12, s.speakerName || 'Presenter')
+  } else if (hasCamera && camera && s.speakerLayout === 'overlay') {
     const camW = 264
     const camH = 160
     const pad = 20
     const camX = width - camW - pad
     const camY = height - camH - pad
-    drawRoundedVideo(ctx, s.cameraVideo, camX, camY, camW, camH, 14, s.speakerName || 'Presenter')
+    drawRoundedVideo(ctx, camera, cameraWidth, cameraHeight, camX, camY, camW, camH, 14, s.speakerName || 'Presenter')
   }
 
   // 3. Subtle LIVE badge when broadcasting
@@ -137,7 +143,7 @@ function drawContained(
   ctx.drawImage(source, rx, ry, rw, rh)
 }
 
-function drawCovered(
+export function drawCovered(
   ctx: CanvasRenderingContext2D,
   source: CanvasImageSource,
   sw: number,
@@ -158,7 +164,9 @@ function drawCovered(
 
 function drawRoundedVideo(
   ctx: CanvasRenderingContext2D,
-  video: HTMLVideoElement,
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
   x: number,
   y: number,
   w: number,
@@ -169,7 +177,7 @@ function drawRoundedVideo(
   ctx.save()
   roundRect(ctx, x, y, w, h, r)
   ctx.clip()
-  drawCovered(ctx, video, video.videoWidth, video.videoHeight, x, y, w, h)
+  drawCovered(ctx, source, sourceWidth, sourceHeight, x, y, w, h)
 
   // Bottom name pill
   ctx.fillStyle = 'rgba(15, 23, 42, 0.72)'

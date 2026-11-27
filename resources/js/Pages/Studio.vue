@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
-import { StudioSession, StudioSlide } from '../lib/studioSession'
+import { createChatPoller } from '../lib/chatPolling'
+import { StudioSession, type BackgroundState, type StudioSlide } from '../lib/studioSession'
 import { SpeakerLayout, StageSource } from '../lib/stageCompositor'
 import StudioSlidesPanel from '../Components/StudioSlidesPanel.vue'
 import StudioChatPanel, { ChatMessage } from '../Components/StudioChatPanel.vue'
@@ -53,6 +54,19 @@ const camOn = ref(false)
 const screenOn = ref(false)
 const micOn = ref(true)
 const mediaError = ref('')
+const backgroundState = ref<BackgroundState>({ mode: 'none', imageId: null, available: true })
+const backgroundInput = ref<HTMLInputElement | null>(null)
+const backgroundError = ref('')
+const backgrounds = [
+  { label: 'Dunes abstract', url: '/backgrounds/dunes-abstract.png' },
+  { label: 'Bookcase lounge', url: '/backgrounds/bookcase-lounge.png' },
+  { label: 'Modern office', url: '/backgrounds/modern-office.png' },
+  { label: 'Library wall', url: '/backgrounds/library-wall.png' },
+]
+const backgroundModes = [
+  { label: 'None', value: 'none' },
+  { label: 'Blur', value: 'blur' },
+] as const
 const slidePage = ref(props.room.current_slide_page || 1)
 const slideTotal = ref(0)
 const slideError = ref('')
@@ -60,6 +74,7 @@ const slideError = ref('')
 const currentSlide = computed(() => props.slides.find((s) => s.id === props.currentSlideId) ?? null)
 
 const session = new StudioSession(props.room.slug, props.presenterKey, {
+  onBackgroundState: (state) => { backgroundState.value = state },
   onViewerCount: (n) => { viewerCount.value = n },
   onSlideMeta: (p, t, err) => { slidePage.value = p; slideTotal.value = t; slideError.value = err },
   onMediaState: (c, s, m, err) => { camOn.value = c; screenOn.value = s; micOn.value = m; mediaError.value = err },
@@ -72,28 +87,51 @@ session.roomTitle = props.room.title
 session.speakerName = presenterName.value
 session.isLive = isLive.value
 
+let backgroundSelection = 0
+
+async function selectBackground(url: string): Promise<void> {
+  const selection = ++backgroundSelection
+  backgroundError.value = ''
+  try {
+    await session.setBackgroundImage(url)
+  } catch {
+    if (selection === backgroundSelection) backgroundError.value = 'Could not open this background image.'
+  }
+}
+
+async function uploadBackground(event: Event): Promise<void> {
+  const input = event.currentTarget as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+
+  const url = URL.createObjectURL(file)
+  try {
+    await selectBackground(url)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+function selectBackgroundMode(mode: 'none' | 'blur'): void {
+  backgroundSelection++
+  backgroundError.value = ''
+  session.setBackgroundMode(mode)
+}
+
 let pollTimer: number | null = null
 
+const pollBackstage = createChatPoller<{ messages: ChatMessage[] }>(
+  () => `/r/${props.room.slug}/chat/backstage?key=${encodeURIComponent(props.presenterKey)}`,
+  (data) => { backstageMessages.value = data.messages || [] },
+)
+const pollGuestChat = createChatPoller<{ messages: ChatMessage[] }>(
+  () => `/r/${props.room.slug}/chat/room?key=${encodeURIComponent(props.presenterKey)}`,
+  (data) => { guestMessages.value = data.messages || [] },
+)
+
 async function fetchMessages(): Promise<void> {
-  const key = encodeURIComponent(props.presenterKey)
-  const [bs, rm] = await Promise.all([
-    fetch(`/r/${props.room.slug}/chat/backstage?key=${key}`, {
-      credentials: 'same-origin',
-      headers: { Accept: 'application/json' },
-    }).catch(() => null),
-    fetch(`/r/${props.room.slug}/chat/room?key=${key}`, {
-      credentials: 'same-origin',
-      headers: { Accept: 'application/json' },
-    }).catch(() => null),
-  ])
-  if (bs && bs.ok) {
-    const data = await bs.json()
-    backstageMessages.value = data.messages || []
-  }
-  if (rm && rm.ok) {
-    const data = await rm.json()
-    guestMessages.value = data.messages || []
-  }
+  await Promise.all([pollBackstage(), pollGuestChat()])
 }
 
 async function copyLink(kind: 'guest' | 'studio' | 'register'): Promise<void> {
@@ -310,6 +348,49 @@ onBeforeUnmount(() => {
             >
               Next
             </button>
+          </div>
+
+          <div role="group" aria-label="Background" class="flex w-full flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+            <span class="mr-1 text-[#FAF8F2]/60">Background</span>
+            <button
+              v-for="option in backgroundModes"
+              :key="option.value"
+              type="button"
+              :aria-pressed="backgroundState.mode === option.value"
+              :disabled="option.value === 'blur' && !backgroundState.available"
+              class="rounded-full px-3 py-1 font-medium transition disabled:opacity-40"
+              :class="backgroundState.mode === option.value ? 'bg-[#C9F284] text-[#202423]' : 'bg-white/10 text-[#FAF8F2]/80 hover:bg-white/15'"
+              @click="selectBackgroundMode(option.value)"
+            >
+              {{ option.label }}
+            </button>
+            <button
+              v-for="background in backgrounds"
+              :key="background.url"
+              type="button"
+              :aria-label="background.label"
+              :title="background.label"
+              :aria-pressed="backgroundState.mode === 'image' && backgroundState.imageId === background.url"
+              :disabled="!backgroundState.available"
+              class="h-9 w-14 overflow-hidden rounded-md border-2 transition disabled:opacity-40"
+              :class="backgroundState.mode === 'image' && backgroundState.imageId === background.url ? 'border-[#C9F284]' : 'border-white/10 hover:border-white/50'"
+              @click="selectBackground(background.url)"
+            >
+              <img :src="background.url" alt="" class="h-full w-full object-cover" loading="lazy" />
+            </button>
+            <button
+              type="button"
+              :disabled="!backgroundState.available"
+              class="rounded-full px-3 py-1 font-medium transition disabled:opacity-40"
+              :class="backgroundState.mode === 'image' && backgroundState.imageId === 'upload' ? 'bg-[#C9F284] text-[#202423]' : 'bg-white/10 text-[#FAF8F2]/80 hover:bg-white/15'"
+              @click="backgroundInput?.click()"
+            >
+              {{ backgroundState.mode === 'image' && backgroundState.imageId === 'upload' ? 'Uploaded · Replace' : 'Upload' }}
+            </button>
+            <input ref="backgroundInput" type="file" accept="image/*" class="hidden" @change="uploadBackground" />
+            <p v-if="!backgroundState.available || backgroundError" role="status" class="w-full text-[#ffb4b4]">
+              {{ !backgroundState.available ? 'Background effects unavailable' : backgroundError }}
+            </p>
           </div>
         </div>
       </main>

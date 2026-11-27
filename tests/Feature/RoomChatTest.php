@@ -177,3 +177,35 @@ test('unknown moderation actions return 404', function () {
 
     $this->postJson("/r/abc12345/moderate/{$message->id}/explode", ['key' => 'presenter-key-123'])->assertNotFound();
 });
+
+test('chat polling revalidates the current channel and live state', function (string $channel, string $query) {
+    $room = makeRoom();
+    $url = "/r/{$room->slug}/chat/{$channel}{$query}";
+
+    $first = $this->getJson($url)->assertOk();
+    $etag = $first->headers->get('ETag');
+    expect($etag)->toStartWith('W/"');
+
+    $this->getJson($url, ['If-None-Match' => $etag])
+        ->assertNoContent(304)
+        ->assertHeader('ETag', $etag);
+
+    $this->postJson($url, ['key' => 'presenter-key-123', 'body' => 'Next slide'])->assertCreated();
+
+    $withMessage = $this->getJson($url, ['If-None-Match' => $etag])
+        ->assertOk()
+        ->assertJsonPath('messages.0.body', 'Next slide');
+    $messageEtag = $withMessage->headers->get('ETag');
+    expect($messageEtag)->toStartWith('W/"')->not->toBe($etag);
+
+    $room->update(['current_slide_page' => 2]);
+
+    $withSlideChange = $this->getJson($url, ['If-None-Match' => $messageEtag])
+        ->assertOk()
+        ->assertJsonPath('live.current_slide_page', 2);
+    expect($withSlideChange->headers->get('ETag'))->toStartWith('W/"')->not->toBe($messageEtag);
+})->with([
+    'guest room' => ['room', ''],
+    'presenter room' => ['room', '?key=presenter-key-123'],
+    'backstage' => ['backstage', '?key=presenter-key-123'],
+]);

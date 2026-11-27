@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import GreenroomLogo from '../Components/GreenroomLogo.vue'
+import { createChatPoller } from '../lib/chatPolling'
 import { loadPdfDeck, loadPptxDeck, type RenderedDeck } from '../lib/slideRenderer'
 import { csrfToken, GuestReceiver } from '../lib/webrtcSignaling'
 
@@ -53,13 +54,10 @@ function joinRoom() {
   })
 }
 
-async function fetchState() {
-  const res = await fetch(`/r/${props.room.slug}/chat/room`, {
-    credentials: 'same-origin',
-    headers: { Accept: 'application/json' },
-  })
-  if (!res.ok) return
-  const data = await res.json()
+const fetchState = createChatPoller<{
+  messages: ChatMsg[]
+  live: { is_live: boolean; current_slide_page: number; slide: SlideMeta | null }
+}>(() => `/r/${props.room.slug}/chat/room`, (data) => {
   messages.value = data.messages ?? []
   if (data.live) {
     isLive.value = !!data.live.is_live
@@ -68,7 +66,7 @@ async function fetchState() {
       ? { id: data.live.slide.id, name: data.live.slide.name, mime: data.live.slide.mime }
       : null
   }
-}
+})
 
 async function renderFallbackSlide() {
   const slide = liveSlide.value
