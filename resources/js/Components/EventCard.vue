@@ -268,7 +268,7 @@ function copyRegistrationLink() {
                     <div class="flex items-center justify-between gap-2 text-xs">
                         <div>
                             <div class="font-semibold text-[#202423]">
-                                {{ formatDuration(rec.duration_seconds) }}
+                                {{ rec.download_limited ? 'Outside your download allowance' : formatDuration(rec.duration_seconds) }}
                                 <span class="text-[#202423]/55 font-normal">• {{ rec.status }}</span>
                             </div>
                             <div class="text-[11px] text-[#202423]/55">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Filesystem\UntaskedStorageAdapter;
 use App\Models\Recording;
 use App\Models\Room;
+use App\Services\SaasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,9 @@ class LiveController extends Controller
     {
         $room = $this->presenterRoom($slug, $key);
 
+        abort_if(config('saas.enabled') && $room->saas_source === 'pass' && $room->hasEnded(),
+            403, 'This Webinar Pass has already been used for a broadcast.');
+
         if (! $room->isLive()) {
             $room->update([
                 'live_started_at' => now(),
@@ -40,8 +44,8 @@ class LiveController extends Controller
     {
         $room = $this->presenterRoom($slug, $key);
 
-        if ($room->isLive()) {
-            $room->update(['live_ended_at' => now()]);
+        if ($room->live_started_at && $room->live_ended_at === null) {
+            $room->update(['live_ended_at' => $room->passTimeExpired() ? $room->passDeadline() : now()]);
         }
 
         return response()->json(['live' => $this->liveState($room->fresh())]);
@@ -98,13 +102,15 @@ class LiveController extends Controller
         ], 201);
     }
 
-    public function downloadRecording(int $recording, Request $request): Response
+    public function downloadRecording(int $recording, Request $request, SaasService $saas): Response
     {
         $user = $request->user();
         abort_if($user === null, 403);
 
         $rec = Recording::with('room')->findOrFail($recording);
         abort_unless($rec->room && $rec->room->user_id === $user->id, 403);
+
+        abort_unless($saas->canDownload($user, $rec), 403, 'This recording is outside your download allowance.');
 
         $bytes = $this->storage()->get($rec->storage_key);
 
@@ -120,6 +126,7 @@ class LiveController extends Controller
     {
         return [
             'is_live' => $room->isLive(),
+            'pass_deadline' => $room->passDeadline()?->toIso8601String(),
             'live_started_at' => $room->live_started_at?->toIso8601String(),
             'live_ended_at' => $room->live_ended_at?->toIso8601String(),
             'stage_source' => $room->stage_source ?? 'slide',

@@ -18,6 +18,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'saasEnabled' => (bool) config('saas.enabled'),
             'auth' => [
                 'user' => $request->user(),
             ],

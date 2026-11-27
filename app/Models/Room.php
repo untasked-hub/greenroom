@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Room extends Model
@@ -48,12 +49,26 @@ class Room extends Model
 
     public function isLive(): bool
     {
-        return $this->live_started_at !== null && $this->live_ended_at === null;
+        return $this->live_started_at !== null && ! $this->hasEnded();
     }
 
     public function hasEnded(): bool
     {
-        return $this->live_ended_at !== null;
+        return $this->live_ended_at !== null || $this->passTimeExpired();
+    }
+
+    public function passDeadline(): ?Carbon
+    {
+        if (! config('saas.enabled') || $this->saas_source !== 'pass') {
+            return null;
+        }
+
+        return $this->live_started_at?->copy()->addMinutes(config('saas.pass_duration_minutes'));
+    }
+
+    public function passTimeExpired(): bool
+    {
+        return $this->passDeadline()?->lte(now()) ?? false;
     }
 
     public function registrations(): HasMany

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\LiveController;
@@ -24,6 +25,11 @@ Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::post('/events/{slug}', [EventController::class, 'update'])->name('events.update');
 Route::get('/recordings', [AccountController::class, 'recordings'])->name('recordings.index');
 Route::get('/recordings/{recording}/video', [LiveController::class, 'downloadRecording'])->whereNumber('recording')->name('recordings.video');
+
+Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+Route::post('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
+Route::post('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+Route::post('/billing/webhook', [BillingController::class, 'webhook'])->name('billing.webhook');
 
 // Presenter creates a room; the presenter key lives in the studio URL.
 Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');

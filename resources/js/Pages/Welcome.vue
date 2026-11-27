@@ -32,6 +32,7 @@ const logout = () => router.post('/logout')
           <GreenroomLogo subtitle="Live Webinar Studio" />
         </Link>
         <div v-if="user" class="flex items-center gap-2.5 text-sm">
+          <Link v-if="page.props.saasEnabled" href="/billing" class="gr-btn text-xs">Billing</Link>
           <span class="gr-muted hidden sm:inline">{{ user.name }}</span>
           <Link href="/events" class="gr-btn text-xs">
             My events
@@ -41,6 +42,7 @@ const logout = () => router.post('/logout')
           </button>
         </div>
         <div v-else class="flex items-center gap-2.5 text-sm">
+          <Link v-if="page.props.saasEnabled" href="/billing" class="gr-btn text-xs">Plans</Link>
           <Link href="/login" class="gr-btn text-xs">Sign in</Link>
           <Link href="/register" class="gr-btn gr-btn-primary text-xs">
             Create account

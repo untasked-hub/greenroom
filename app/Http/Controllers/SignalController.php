@@ -15,6 +15,8 @@ class SignalController extends Controller
         $room = Room::where('slug', $slug)->first();
         abort_if($room === null, 404);
 
+        abort_if($room->passTimeExpired(), 403);
+
         $data = $request->validate([
             'sender' => ['required', 'string', 'max:64'],
             'recipient' => ['required', 'string', 'max:64'],

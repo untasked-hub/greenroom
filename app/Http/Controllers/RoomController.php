@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Message;
 use App\Models\Room;
+use App\Services\SaasService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,14 @@ use Inertia\Response;
 
 class RoomController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, SaasService $saas): RedirectResponse
     {
+        if (config('saas.enabled') && $request->user() === null) {
+            return redirect()->guest(route('login'))->withErrors([
+                'billing' => 'Sign in to create a hosted webinar.',
+            ]);
+        }
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:120'],
             'scheduled_at' => ['nullable', 'date'],
@@ -27,7 +34,7 @@ class RoomController extends Controller
 
         $presenterKey = Str::random(40);
 
-        Room::create([
+        $room = $saas->createRoom($request->user(), [
             'slug' => $slug,
             'title' => $data['title'],
             'description' => isset($data['description']) ? trim((string) $data['description']) : null,
@@ -37,6 +44,12 @@ class RoomController extends Controller
             'presenter_key_encrypted' => \Illuminate\Support\Facades\Crypt::encryptString($presenterKey),
             'user_id' => $request->user()?->id,
         ]);
+
+        if ($room === null) {
+            return redirect()->route('billing.index')->withErrors([
+                'billing' => 'You need an available hosted webinar to create a room.',
+            ]);
+        }
 
         return redirect()->route('studio', [$slug, $presenterKey]);
     }

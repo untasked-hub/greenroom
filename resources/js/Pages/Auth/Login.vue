@@ -30,6 +30,8 @@ const submit = () => form.post('/login')
           <p class="gr-muted mt-1 text-sm">Access your upcoming and past events, attendee lists, email settings, and studios.</p>
         </div>
 
+        <p v-if="$page.props.errors.billing" role="alert" class="text-sm text-[#C43D3D]">{{ $page.props.errors.billing }}</p>
+
         <form class="gr-card space-y-4 p-6" @submit.prevent="submit">
           <div>
             <label class="gr-label" for="email">Email</label>
@@ -67,7 +69,7 @@ const submit = () => form.post('/login')
 
           <p class="gr-muted text-center text-xs">
             No account yet?
-            <Link href="/register" class="font-semibold text-[#006849] hover:underline">Create an optional account</Link>
+            <Link href="/register" class="font-semibold text-[#006849] hover:underline">{{ $page.props.saasEnabled ? 'Create an account' : 'Create an optional account' }}</Link>
           </p>
         </form>
       </section>

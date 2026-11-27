@@ -10,6 +10,7 @@ use App\Services\WebinarEmailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,20 +74,37 @@ class RegistrationController extends Controller
         $email = strtolower(trim($data['email']));
         $name = trim($data['name']);
 
-        $registration = WebinarRegistration::where('room_id', $room->id)
-            ->where('email', $email)
-            ->where('registration_type', $type)
-            ->first();
+        $register = function () use ($room, $email, $type, $name) {
+            if (config('saas.enabled')) {
+                Room::whereKey($room->id)->lockForUpdate()->firstOrFail();
+            }
 
+            $registration = WebinarRegistration::where('room_id', $room->id)
+                ->where('email', $email)
+                ->where('registration_type', $type)
+                ->first();
+
+            if ($registration === null) {
+                if (config('saas.enabled') && $room->registrations()->count() >= config('saas.attendee_limit')) {
+                    return null;
+                }
+
+                $registration = $room->registrations()->create([
+                    'name' => $name,
+                    'email' => $email,
+                    'registration_type' => $type,
+                    'token' => Str::random(48),
+                ]);
+            } else {
+                $registration->update(['name' => $name]);
+            }
+
+            return $registration;
+        };
+
+        $registration = config('saas.enabled') ? DB::transaction($register, 3) : $register();
         if ($registration === null) {
-            $registration = $room->registrations()->create([
-                'name' => $name,
-                'email' => $email,
-                'registration_type' => $type,
-                'token' => Str::random(48),
-            ]);
-        } else {
-            $registration->update(['name' => $name]);
+            return back()->withErrors(['email' => 'This webinar has reached its registration limit.']);
         }
 
         $templateKey = $type === WebinarRegistration::TYPE_REPLAY

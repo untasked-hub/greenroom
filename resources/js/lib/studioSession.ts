@@ -414,6 +414,8 @@ export class StudioSession {
     }).catch(() => {})
   }
 
+  private liveDeadlineTimer?: number
+
   async goLive(): Promise<void> {
     const res = await fetch(`/studio/${this.slug}/${this.presenterKey}/go-live`, {
       method: 'POST',
@@ -421,8 +423,14 @@ export class StudioSession {
       headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
     })
     if (!res.ok) {
-      this.cb.onLiveState(false, 'Could not start live broadcast.')
+      const error = await res.json().catch(() => null)
+      this.cb.onLiveState(false, error?.message || 'Could not start live broadcast.')
       return
+    }
+    const { live } = await res.json()
+    if (live.pass_deadline) {
+      window.clearTimeout(this.liveDeadlineTimer)
+      this.liveDeadlineTimer = window.setTimeout(() => void this.endLive(), Math.max(0, Date.parse(live.pass_deadline) - Date.now()))
     }
     this.isLive = true
     const stream = this.buildBroadcastStream()
@@ -432,6 +440,7 @@ export class StudioSession {
   }
 
   async endLive(): Promise<void> {
+    window.clearTimeout(this.liveDeadlineTimer)
     this.isLive = false
     await this.broadcaster.stop()
     const blob = await this.stopRecording()
@@ -510,6 +519,7 @@ export class StudioSession {
     this.destroyed = true
     this.backgroundImageRestoring = false
     this.backgroundImageRequest++
+    window.clearTimeout(this.liveDeadlineTimer)
     this.virtualBackground.dispose()
     this.tickWorker?.terminate()
     this.tickWorker = null

@@ -6,6 +6,7 @@ use App\Filesystem\UntaskedStorageAdapter;
 use App\Models\Recording;
 use App\Models\Room;
 use App\Models\WebinarRegistration;
+use App\Services\SaasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,13 +18,14 @@ use Inertia\Response;
 
 class EventController extends Controller
 {
-    public function index(Request $request): Response|RedirectResponse
+    public function index(Request $request, SaasService $saas): Response|RedirectResponse
     {
         $user = $request->user();
         if ($user === null) {
             return redirect()->route('login');
         }
 
+        $studioRecordingIds = $saas->studioRecordingIds($user);
         $rooms = Room::query()
             ->where('user_id', $user->id)
             ->with([
@@ -95,15 +97,27 @@ class EventController extends Controller
             $returningCount = count(array_filter($attendees, fn ($a) => $a['is_returning']));
             $firstTimeCount = count($attendees) - $returningCount;
 
-            $recordings = $room->recordings->map(fn (Recording $rec) => [
-                'id' => $rec->id,
-                'size' => $rec->size,
-                'mime' => $rec->mime ?: 'video/webm',
-                'started_at' => $rec->started_at?->toIso8601String(),
-                'ended_at' => $rec->ended_at?->toIso8601String(),
-                'created_at' => $rec->created_at?->toIso8601String(),
-                'video_url' => route('recordings.video', $rec->id),
-            ])->values()->all();
+            $recordings = $room->recordings->map(function (Recording $rec) use ($room, $user, $saas, $studioRecordingIds) {
+                $videoUrl = route('recordings.video', $rec->id);
+                $payload = [
+                    'id' => $rec->id,
+                    'size' => $rec->size,
+                    'mime' => $rec->mime ?: 'video/webm',
+                    'started_at' => $rec->started_at?->toIso8601String(),
+                    'ended_at' => $rec->ended_at?->toIso8601String(),
+                    'created_at' => $rec->created_at?->toIso8601String(),
+                    'video_url' => $videoUrl,
+                ];
+
+                if (config('saas.enabled')) {
+                    $rec->setRelation('room', $room);
+                    $allowed = $saas->canDownload($user, $rec, $studioRecordingIds);
+                    $payload['video_url'] = $payload['media_url'] = $allowed ? $videoUrl : null;
+                    $payload['download_limited'] = ! $allowed;
+                }
+
+                return $payload;
+            })->values()->all();
 
             $isPast = $room->hasEnded()
                 || ($room->scheduled_at !== null && $room->scheduled_at->isPast() && ! $room->isLive() && count($recordings) > 0);

@@ -24,6 +24,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // Keep cookies host-only: never set SESSION_DOMAIN to the parent branded domain.
         // No login route in the starter — guests on auth routes go home instead of RouteNotFoundException 500.
         $middleware->redirectGuestsTo('/');
+        $middleware->preventRequestForgery(except: ['billing/webhook']);
         $middleware->web(append: [
             PreferBrandedHost::class,
             HandleInertiaRequests::class,

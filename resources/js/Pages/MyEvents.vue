@@ -79,6 +79,7 @@ function logout() {
                 </div>
 
                 <div class="flex items-center gap-3 text-sm">
+                    <Link v-if="page.props.saasEnabled" href="/billing" class="gr-btn text-xs">Billing</Link>
                     <span v-if="user" class="hidden sm:inline text-[#202423]/70 font-medium">
                         {{ user.name }}
                     </span>
